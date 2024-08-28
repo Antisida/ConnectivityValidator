@@ -22,11 +22,12 @@ import org.antisida.osm.validator.connectivity.Main;
 public class FileUtils {
 
   public MemoryStorage readOM5File(String path) {
+    String pathString = getWorkPath().toString() + "\\" + path;
     try {
-      return new O5MReader().read(new File(getWorkPath().toString() + path));
+      return new O5MReader().read(new File(pathString));
     } catch (Exception e) {
-      log.error("Файл .om5 не найден: {}" + path);
-      throw new RuntimeException("Файл .om5 не найден: " + path);
+      log.error("FФайл .om5 не найден: {}", pathString);
+      throw new RuntimeException("Файл .om5 не найден: " + pathString);
     }
   }
 

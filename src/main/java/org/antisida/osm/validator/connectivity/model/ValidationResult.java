@@ -6,6 +6,7 @@ import java.util.Map;
 public record ValidationResult(
     Map<Long, MarkedNode> adjacencyList,
     List<ConnectedComponent> components
+    // FIXME: 28.08.2024 Добавить регион
 ) {
 
 }

@@ -1,29 +1,33 @@
 package org.antisida.osm.validator.connectivity.validator;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
-import java.util.Stack;
+import java.util.Map;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.alex73.osmemory.OsmWay;
 import org.antisida.osm.validator.connectivity.model.ConnectedComponent;
 import org.antisida.osm.validator.connectivity.model.MarkedNode;
 import org.antisida.osm.validator.connectivity.model.ValidationResult;
 
+@Slf4j
 public class ConnectivityUtils {
 
 
-  public HashMap<Long, MarkedNode> createAdjacencyList(List<OsmWay> osmWays) {
+  public Map<Long, MarkedNode> createAdjacencyList(List<OsmWay> osmWays) {
 
-    HashMap<Long, MarkedNode> commonAdjMap = new HashMap<>();
+    Map<Long, MarkedNode> commonAdjMap = new HashMap<>();
 
     for (OsmWay osmWay : osmWays) {
-      HashMap<Long, MarkedNode> adjacencyMapForWay = createAdjacencyListForOneWay(osmWay);
-      for (Long nodeId : adjacencyMapForWay.keySet()) {
+      Map<Long, MarkedNode> adjacencyMapForWay = createAdjacencyListForOneWay(osmWay);
+      for (MarkedNode markedNode : adjacencyMapForWay.values()) {
         commonAdjMap.merge(
-            nodeId,
-            adjacencyMapForWay.get(nodeId),
+            markedNode.getOsmId(),
+            markedNode,
             (oldValue, newValue) -> {
               //объединяем wayId в один массив
               oldValue.addWayIds(newValue.getOsmWayIds());
@@ -32,9 +36,23 @@ public class ConnectivityUtils {
               return oldValue;
             });
       }
+
+// todo почему-то  это работает быстрее
+//      for (Long nodeId : adjacencyMapForWay.keySet()) {
+//        commonAdjMap.merge(
+//            nodeId,
+//            adjacencyMapForWay.get(nodeId),
+//            (oldValue, newValue) -> {
+//              //объединяем wayId в один массив
+//              oldValue.addWayIds(newValue.getOsmWayIds());
+//              //объединяем соседей в один массив
+//              oldValue.addNeighborNodeIds(newValue.getNeighborNodeIds());
+//              return oldValue;
+//            });
+//      }
     }
 
-    //    System.out.println("Количество узлов в списке связности: " + commonAdjMap.size());
+    log.info("MarkedNode count: {}", commonAdjMap.size());
     return commonAdjMap;
   }
 
@@ -46,11 +64,11 @@ public class ConnectivityUtils {
    * MarkedNode = сама точка с заполненными соседними точками
    */
 
-  private HashMap<Long, MarkedNode> createAdjacencyListForOneWay(OsmWay osmWay) {
+  private Map<Long, MarkedNode> createAdjacencyListForOneWay(OsmWay osmWay) {
     //long = id точки, MarkedNode = сама точка с заполненными соседними точками
-    HashMap<Long, MarkedNode> adjMapForWay = new HashMap<>();
+    Map<Long, MarkedNode> adjMapForWay = new HashMap<>();
     if (osmWay.getNodeIds().length < 2) {
-      throw new IllegalArgumentException("Вей " + osmWay.getId() + " имеет только 1 точку!");//todo
+      throw new IllegalArgumentException("Way " + osmWay.getId() + " has only 1 node!");//todo
     }
 
     long[] nodeIds = osmWay.getNodeIds();
@@ -73,7 +91,7 @@ public class ConnectivityUtils {
 
   private long[] getNeighborNodeIds(long[] nodeIds, int i) {
     // если точка не первая и не последняя в вее
-    if (i > 0 & i < nodeIds.length - 1) {
+    if (i > 0 && i != nodeIds.length - 1) {
       return new long[]{nodeIds[i - 1], nodeIds[i + 1]};
     }
     // если первая точка в вее
@@ -89,53 +107,50 @@ public class ConnectivityUtils {
   }
 
   //mark nodes by component via dfs
-  public ValidationResult markNodesAndComputeComponents(HashMap<Long, MarkedNode> adjacencyList) {
+  public ValidationResult markNodesAndComputeComponents(Map<Long, MarkedNode> adjacencyList) {
     List<ConnectedComponent> connectedComponents = new ArrayList<>();
 
+    Collection<MarkedNode> adjacencyListValues = adjacencyList.values();
 
     // пока не останется ни одной не посещенной ноды
-    while (adjacencyList.values().stream().anyMatch(n -> !n.isVisited())) {
+    for (MarkedNode markedNode : adjacencyListValues) {
+      if (markedNode.isVisited()) {
+        continue;
+      }
       UUID componentId = UUID.randomUUID();
 
-      // find first node !isVisited()
-      Optional<MarkedNode> notVisitedMarkedNode = adjacencyList.values()
-          .stream()
-          .filter(n -> !n.isVisited())
-          .findFirst();
+      markedNode.setVisited(true);
+      markedNode.setConnectedComponentId(componentId);
 
-      if (notVisitedMarkedNode.isPresent()) {
-        MarkedNode markedNode = notVisitedMarkedNode.get();
-        markedNode.setVisited(true);
-        markedNode.setConnectedComponentId(componentId);
+      int nodeCount = 1;
 
-        int nodeCount = 1;
-
-        // стек непосещенных нод формируется из соседних точек
-        Stack<Long> notVisitedNodes = new Stack<>();
-        for (long nodeId : markedNode.getNeighborNodeIds()) {
-          if (!adjacencyList.get(nodeId).isVisited()) { //fixme долгая операция
-            notVisitedNodes.push(nodeId);
-          }
+      // стек непосещенных нод формируется из соседних точек
+      Deque<Long> notVisitedStack = new ArrayDeque<>();
+      for (long nodeId : markedNode.getNeighborNodeIds()) {
+        if (!adjacencyList.get(nodeId).isVisited()) {
+          notVisitedStack.push(nodeId);
         }
-
-        while (!notVisitedNodes.empty()) {
-          MarkedNode nodeFromStack = adjacencyList.get(notVisitedNodes.pop());
-          nodeFromStack.setVisited(true);
-          nodeFromStack.setConnectedComponentId(componentId);
-          nodeCount++;
-          for (long neighbour : nodeFromStack.getNeighborNodeIds()) {
-            if (!adjacencyList.get(neighbour).isVisited()) {
-              notVisitedNodes.push(neighbour);
-            }
-          }
-        }
-
-        connectedComponents.add(
-            new ConnectedComponent(componentId, 1000 < nodeCount));
       }
+
+      while (!notVisitedStack.isEmpty()) {
+        MarkedNode nodeFromStack = adjacencyList.get(notVisitedStack.pop());
+        nodeFromStack.setVisited(true);
+        nodeFromStack.setConnectedComponentId(componentId);
+        nodeCount++;
+        for (long neighbour : nodeFromStack.getNeighborNodeIds()) {
+          if (!adjacencyList.get(neighbour).isVisited()) {
+            notVisitedStack.push(neighbour);
+          }
+        }
+      }
+
+      connectedComponents.add(new ConnectedComponent(componentId, 1000 < nodeCount));
     }
 
-    System.out.println("Количество ConnectedComponent: " + connectedComponents.size());
+    if (adjacencyListValues.stream().noneMatch(MarkedNode::isVisited)) {
+      log.error("Exist not visited MarkedNode!");
+    }
+
     return new ValidationResult(adjacencyList, connectedComponents);
   }
 
