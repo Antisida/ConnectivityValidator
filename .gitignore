@@ -36,4 +36,27 @@ build/
 .vscode/
 
 ### Mac OS ###
-.DS_Store
+.DS_Store!/.idea/.gitignore
+
+!/.idea/compiler.xml
+
+!/.idea/ConnectivityValidator.iml
+
+!/.idea/dataSources.local.xml
+
+!/.idea/dataSources.xml
+
+!/.idea/encodings.xml
+
+!/.idea/google-java-format.xml
+
+!/.idea/jarRepositories.xml
+
+!/.idea/misc.xml
+
+!/.idea/uiDesigner.xml
+
+!/.idea/vcs.xml
+
+!/.idea/workspace.xml
+!/.idea/sonarlint/
