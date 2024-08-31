@@ -4,8 +4,10 @@ import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import lombok.experimental.UtilityClass;
 import org.antisida.osm.validator.connectivity.utils.FileUtils;
 
+@UtilityClass
 public class DbInitializer {
   /*private static volatile DbInitializer instance;
 
@@ -33,7 +35,7 @@ public class DbInitializer {
 
   public static void initDb() {
     DbInitializer.connection = H2Connector.getConnection();
-    dropALL();
+    dropAll();
     createTables();
     insertRegions();
   }
@@ -52,7 +54,7 @@ public class DbInitializer {
 //  }
 
 
-  private static void dropALL() {
+  private static void dropAll() {
     executeUpdate(DROP_ALL_OBJECTS);
   }
 
@@ -71,6 +73,7 @@ public class DbInitializer {
       preparedStatement.executeUpdate();
     } catch (SQLException ex) {
       ex.printStackTrace();
+      //fixme
     }
   }
 

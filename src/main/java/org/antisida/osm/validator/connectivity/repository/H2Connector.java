@@ -18,12 +18,13 @@ public class H2Connector {
   static {
     HikariConfig config = new HikariConfig();
     String workDir = FileUtils.getWorkPath().toString();
-    config.setJdbcUrl("jdbc:h2:file:" + workDir + "/sample;");
+    config.setJdbcUrl("jdbc:h2:file:" + workDir + "/sample");
+//    config.setJdbcUrl("jdbc:h2:file:" + workDir + "/sample;AUTO_SERVER=TRUE");
     config.setUsername("sa");
     config.setPassword("as");
     config.setConnectionTimeout(50000);
-    config.setMaximumPoolSize(10);
-    config.setLeakDetectionThreshold(1000);
+    config.setMaximumPoolSize(100);
+//    config.setLeakDetectionThreshold(1000);
     config.setDriverClassName(H2_DRIVER);
     dataSource = new HikariDataSource(config);
   }

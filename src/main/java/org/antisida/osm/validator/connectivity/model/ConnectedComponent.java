@@ -7,7 +7,10 @@ import lombok.RequiredArgsConstructor;
 @Data
 @RequiredArgsConstructor
 public final class ConnectedComponent {
+
   private final UUID id;
-  private int regionId;
-  private final boolean isolated;
+  private final int regionId;
+  private final int size;
+
+  public boolean isIsolated() { return size < 100_000; }
 }

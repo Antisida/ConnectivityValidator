@@ -1,5 +1,6 @@
 package org.antisida.osm.validator.connectivity.utils;
 
+import java.util.Arrays;
 import lombok.experimental.UtilityClass;
 
 @UtilityClass
@@ -11,4 +12,15 @@ public class ArrayUtils {
     System.arraycopy(two, 0, result, one.length, two.length);
     return result;
   }
+
+  public static Long[] toLongArray(long[] array) {
+    return Arrays.stream(array).boxed().toArray(Long[]::new);
+  }
+
+  public static Integer[] toIntArray(int[] array) {
+    return Arrays.stream(array).boxed().toArray(Integer[]::new);
+  }
+
 }
+
+

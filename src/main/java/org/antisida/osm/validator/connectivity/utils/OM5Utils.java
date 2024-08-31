@@ -1,12 +1,18 @@
 package org.antisida.osm.validator.connectivity.utils;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import lombok.extern.slf4j.Slf4j;
 import org.alex73.osmemory.MemoryStorage;
 import org.alex73.osmemory.OsmWay;
+import org.antisida.osm.validator.BenchUtils;
 
+@Slf4j
 public class OM5Utils {
 
   public ArrayList<OsmWay> getRoutingWays(MemoryStorage memoryStorage) {
+    LocalDateTime start = LocalDateTime.now();
 
     ArrayList<OsmWay> osmWays = new ArrayList<>();
     memoryStorage.byTag("highway", o -> {
@@ -45,6 +51,7 @@ public class OM5Utils {
         }
       }
     });
+    log.info("{}: {} mill", BenchUtils.calledMethod(), Duration.between(start, LocalDateTime.now()).toMillis());
     return osmWays;
   }
 
