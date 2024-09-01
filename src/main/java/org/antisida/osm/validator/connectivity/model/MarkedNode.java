@@ -11,12 +11,21 @@ public final class MarkedNode {
   private boolean visited;
   private UUID connectedComponentId;  //компонент связности в который входит точка
   private long[] neighborNodeIds; // ids соседних по веям точек, обычно двух (если нет петель), иначе больше
+  private final int orderInWay;
+  private final float lat;
+  private final float lon;
 
-  public MarkedNode(long osmId, long[] osmWayIds, long[] neighborNodeIds, UUID connectedComponentId) {
+  public MarkedNode(long osmId, long[] osmWayIds, long[] neighborNodeIds, UUID connectedComponentId,
+                    int orderInWay,
+                    float lat,
+                    float lon) {
     this.osmId = osmId;
     this.osmWayIds = osmWayIds;
     this.neighborNodeIds = neighborNodeIds;
     this.connectedComponentId = connectedComponentId;
+    this.orderInWay = orderInWay;
+    this.lat = lat;
+    this.lon = lon;
   }
 
   public void addWayIds(long[] osmWayIds) {
