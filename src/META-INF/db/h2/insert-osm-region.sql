@@ -64,6 +64,7 @@ VALUES (52, 'NN',  ARRAY [12, 13, 21, 33, 37, 43, 44, 62],      'RU-NIZ.o5m'  ),
 
        (172, 'TYU', ARRAY [0],                                  'RU-TYU.o5m'), --FIXME
        (145, 'KGN', ARRAY [0],                                  'RU-KGN.o5m'), --FIXME
+       (999, 'RU-SOUTH', ARRAY [700],                           'RU-SOUTH.o5m'), --FIXME
 
 
        (100, 'NOR',     ARRAY [0], 'norway-latest.o5m'),
@@ -84,9 +85,9 @@ VALUES (52, 'NN',  ARRAY [12, 13, 21, 33, 37, 43, 44, 62],      'RU-NIZ.o5m'  ),
        (614, 'UA-14', ARRAY [0], 'UA-14.o5m'),
        (665, 'UA-14', ARRAY [0], 'UA-65.o5m'),
 
-       (700,   'GE', ARRAY [5, 6, 7, 9, 15, 20, 23, 800, 1000, 1100],     'GE.o5m'),
+       (700,   'GE', ARRAY [999, 800, 1000, 1100],     'GE.o5m'),
        (800,   'AZ', ARRAY [0], 'AZ.o5m'), --FIXME не указаны соседи
        (1000,  'AM', ARRAY [0], 'AM.o5m'),--FIXME не указаны соседи
        (900,   'KZ', ARRAY [0], 'KZ.o5m'),--FIXME не указаны соседи
-       (1100,  'TR', ARRAY [0],     'TR.o5m');
+       (1100,  'TR', ARRAY [700],     'TR.o5m');
 

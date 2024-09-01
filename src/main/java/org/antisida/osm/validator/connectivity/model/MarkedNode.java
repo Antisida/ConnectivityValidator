@@ -12,10 +12,11 @@ public final class MarkedNode {
   private UUID connectedComponentId;  //компонент связности в который входит точка
   private long[] neighborNodeIds; // ids соседних по веям точек, обычно двух (если нет петель), иначе больше
 
-  public MarkedNode(long osmId, long osmWayId, long[] neighborNodeIds) {
+  public MarkedNode(long osmId, long[] osmWayIds, long[] neighborNodeIds, UUID connectedComponentId) {
     this.osmId = osmId;
-    this.osmWayIds = new long[]{osmWayId};
+    this.osmWayIds = osmWayIds;
     this.neighborNodeIds = neighborNodeIds;
+    this.connectedComponentId = connectedComponentId;
   }
 
   public void addWayIds(long[] osmWayIds) {

@@ -16,7 +16,7 @@ CREATE TABLE nodes
     con_component_id  UUID,
     neighbor_node_ids BIGINT ARRAY
 );
--- CREATE UNIQUE INDEX marked_nodes_unique_wayid_order_idx ON nodes (con_component_id, osm_id);
+CREATE UNIQUE INDEX marked_nodes_unique_wayid_order_idx ON nodes (con_component_id, osm_id);
 
 CREATE TABLE isolated_nodes
 (
@@ -42,5 +42,6 @@ CREATE TABLE IF NOT EXISTS components
 (
     id        VARCHAR,
     region_id INTEGER,
-    size      INTEGER
+--     size      INTEGER
+    isolated  BOOLEAN
 );

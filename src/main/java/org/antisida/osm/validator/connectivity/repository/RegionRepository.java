@@ -1,6 +1,5 @@
 package org.antisida.osm.validator.connectivity.repository;
 
-import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -9,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.antisida.osm.validator.connectivity.model.Region;
 import org.antisida.osm.validator.connectivity.utils.ArrayUtils;
@@ -68,19 +66,13 @@ public class RegionRepository {
 
   private static final String REGION_WHERE_ID_IN = "SELECT * FROM regions WHERE id IN (%s)";
 
-  public List<Region> getNeighbors(List<Region> regionList) {
-    List<Integer> neighborIds = regionList.stream()
-        .map(Region::neighborIds)
-        .map(ArrayUtils::toIntArray)
-        .flatMap(Arrays::stream)
-        .distinct()
-        .toList();
+  public List<Region> getRegionsIn(List<Integer> regionIds) {
     List<Region> regions = new ArrayList<>();
-    String sql = REGION_WHERE_ID_IN.formatted(preparePlaceHolders(neighborIds.size()));
+    String sql = REGION_WHERE_ID_IN.formatted(preparePlaceHolders(regionIds.size()));
 
     try (Connection connection = H2Connector.getConnection();
          PreparedStatement ps = connection.prepareStatement(sql)) {
-      setValues(ps, neighborIds);
+      setValues(ps, regionIds);
 
       try (ResultSet resultSet = ps.executeQuery()) {
         while (resultSet.next()) {

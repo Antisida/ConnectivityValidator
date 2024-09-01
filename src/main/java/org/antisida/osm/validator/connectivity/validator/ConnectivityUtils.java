@@ -82,7 +82,10 @@ public class ConnectivityUtils {
       long[] neighborNodeIds = this.getNeighborNodeIds(nodeIds, i);
       // merge потому что веи могут пересекать сами себя, и одна точка может входить несколько раз в один вей
       adjMapForOneWay.merge(nodeIds[i],
-                            new MarkedNode(nodeIds[i], osmWay.getId(), neighborNodeIds),
+                            new MarkedNode(nodeIds[i],
+                                           new long[]{osmWay.getId()},
+                                           neighborNodeIds,
+                                           null),
                             (oldValue, newValue) -> {
                               oldValue.addNeighborNodeIds(newValue.getNeighborNodeIds());
                               return oldValue;
@@ -102,7 +105,7 @@ public class ConnectivityUtils {
     throw new IllegalArgumentException("Error in getNeighborNodeIds(): array index < 0");
   }
 
-//  /**
+  //  /**
 //   * Set component`s UUID to markedNode.
 //   *
 //   * @param adjacencyList
@@ -145,7 +148,7 @@ public class ConnectivityUtils {
             }
           }
         }
-        components.add(new ConnectedComponent(componentId, regionId, componentSize));
+        components.add(new ConnectedComponent(componentId, regionId, /*componentSize, */componentSize < 100_000));
       }
     }
     log.info("markComponents() duration: {}", Duration.between(start, LocalDateTime.now()).toMillis());
@@ -156,52 +159,32 @@ public class ConnectivityUtils {
     return new ValidationResult(adjacencyList, components, components.getFirst().getRegionId());
   }
 
+  /**
+   * @param isolatedNodes изолированные точки региона
+   * @param neighborNotIsolatedNodes точки основного графа соседа
+   * @return сет id компонентов присоединенных к основному графу соседа
+   */
+  public Set<UUID> validateTwoAdjList(/*List<ConnectedComponent> isolatedComponents,*/
+      List<MarkedNode> isolatedNodes,
+      Set<Long> neighborNotIsolatedNodes) {
 
-
-  /*public void validateTwoAdjList(Map<Long, MarkedNode> oneAdjacencyList,
-                                 Map<Long, MarkedNode> thoAdjacencyList) {
-
-    //1. сет id всех изолированных компонентов региона//todo
-    Set<UUID> oneIsolatedComponentIds = oneAdjacencyList.getIsolatedComponentIds();
-    Set<UUID> thoIsolatedComponentIds = thoAdjacencyList.getIsolatedComponentIds();
-
-    Collection<MarkedNode> markedNods = oneAdjacencyList.values();
-
-    //2.сет id изолированных компонент региона с учетом соседа
-    Set<UUID> resultIsolatedComponentIds = markedNods.stream()
-        //все изолированные ноды
-        .filter(markedNode -> oneIsolatedComponentIds.contains(markedNode.getConnectedComponentId()))
+    //сет id компонентов присоединенных к основному графу соседа
+    Set<UUID> resultIsolatedComponentIds = isolatedNodes.stream()
         //если нода есть у соседа, и если у соседа она не входит в сет изолированных компонент
-        .filter(markedNode ->
-                    thoAdjacencyList.containsKey(markedNode.getOsmId())
-                        && !thoIsolatedComponentIds.contains(thoAdjacencyList.get(markedNode.getOsmId())
-                                                                 .getConnectedComponentId()))
+        .filter(node -> neighborNotIsolatedNodes.contains(node.getOsmId()))
         //получаем id всех изолированных компонент
         .collect(Collectors.groupingBy(MarkedNode::getConnectedComponentId))
         .keySet();
 
-//    Set<Integer> filteredRegionIsolatedComponentIds = regionAdjList.getAllMarkedNodes()
-//        .stream()
-//        //если нода входит в состав изолированных компонент графа региона
-//        .filter(markedNode -> regionIsolatedComponentIds.contains(markedNode.getConnectedComponentId()))
-//        //если нода есть у соседа, и если у соседа она не входит в сет изолированных компонент у соседа
-//        .filter(markedNode -> neighborAdjList.containsMarkedNode(markedNode.getId())
-//            && !neighborAdjList.getIsolatedComponentIds().contains(
-//            neighborAdjList.getMarkedNode(markedNode.getId()).getConnectedComponentId()))
-//        //получаем айдишники всех изолированных компонент
-//        .collect(Collectors.groupingBy(MarkedNode::getConnectedComponentId))
-//        .keySet();
-
     //изменение компонентов графа: если компонент приконнекчен к соседу, то помечаем его как неизолированный
-    List<ConnectedComponent> regionConnectedComponents = regionAdjList.getConnectedComponents();
-    for (ConnectedComponent connectedComponent : regionConnectedComponents) {
-      if (resultIsolatedComponentIds.contains(connectedComponent.getId())) {
-        System.out.println("Граф " + connectedComponent.getId() + " setIsolated(false)");
-        connectedComponent.setIsolated(false);
-      }
-    }
-
-  }*/
+//    for (ConnectedComponent connectedComponent : isolatedComponents) {
+//      if (resultIsolatedComponentIds.contains(connectedComponent.getId())) {
+//        System.out.println("Граф " + connectedComponent.getId() + " setIsolated(false)");
+//        connectedComponent.setIsolated(false);
+//      }
+//    }
+    return resultIsolatedComponentIds;
+  }
 
 
   /*public ValidationResult markComponents(Map<Long, MarkedNode> adjacencyList) {

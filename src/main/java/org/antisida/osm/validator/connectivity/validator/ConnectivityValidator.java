@@ -3,9 +3,13 @@ package org.antisida.osm.validator.connectivity.validator;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.antisida.osm.validator.Validator;
+import org.antisida.osm.validator.connectivity.model.MarkedNode;
 import org.antisida.osm.validator.connectivity.model.Region;
 import org.antisida.osm.validator.connectivity.model.ValidationResult;
 import org.antisida.osm.validator.connectivity.repository.Repository;
@@ -53,9 +57,9 @@ public class ConnectivityValidator implements Validator {
         .flatMap(Optional::stream)
         .forEach(resultService::save);
 
-//    forValidateRegions.parallelStream()
-//        .map(this::outerValidate)
-//        .forEach(resultService::update);
+    forValidateRegions.parallelStream()
+        .map(this::outerValidate)
+        .forEach(resultService::setNotIsolated);
 ////    OsmRegion osmRegion = getOsmRegion(filePath); fixme
 //    ValidationResult result = innerValidate(filePath);
 //    repository.saveComponents(result.components());
@@ -80,16 +84,24 @@ public class ConnectivityValidator implements Validator {
         });
   }
 
-  private ValidationResult outerValidate(Region region) {
+  private List<UUID> outerValidate(Region region) {
 
-    /*Map<Long, MarkedNode> regionAdjacencyList = resultService.getAdjacencyList(region.id());
+//    List<ConnectedComponent> isolatedComponents = resultService.getIsolatedComponentsRegionId(region.id());
+    List<MarkedNode> isolatedNodes = resultService.getIsolatedNodes(region.id());
 
-    List<Region> neighbors = regionRepository.getNeighbors(List.of(region));
-    return neighbors.stream()
+    List<Region> neighbors = regionService.getNeighbors(List.of(region));
+
+    List<UUID> forChangeIsolateStatus = neighbors.stream()
+        .filter(FileUtils::isExistO5mFile)//todo
         .map(Region::id)
-        .map(resultService::getAdjacencyList)
-        .forEach(neighborAdjacencyList -> connectivityUtils.validateTwoAdjList(regionAdjacencyList,
-                                                                               neighborAdjacencyList));*/
+        .map(resultService::getNotIsolatedNodeIds)
+        .map(neighborNotIsolatedNodes ->
+                 connectivityUtils.validateTwoAdjList(/*isolatedComponents,*/ isolatedNodes, neighborNotIsolatedNodes))
+        .flatMap(Collection::stream)
+        .distinct()
+        .toList();
+    log.info("Компоненты для смены статуса: {}", forChangeIsolateStatus);
+    return forChangeIsolateStatus;
 
 //    for (OsmRegion osmRegion: region.getNeighbors()) {
 //      if (osmRegion == null) continue;
@@ -105,6 +117,6 @@ public class ConnectivityValidator implements Validator {
 //    return new ValidationResult(region.getId(), region.getPath(),O5mStorageUtils
 //    .readIsolatedWays
 //    (adjacencyRegionList));
-    return null;
+//    return null;
   }
 }

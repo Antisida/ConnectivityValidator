@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.antisida.osm.validator.BenchUtils;
 import org.antisida.osm.validator.connectivity.model.Region;
 import org.antisida.osm.validator.connectivity.repository.RegionRepository;
+import org.antisida.osm.validator.connectivity.utils.ArrayUtils;
 
 @Slf4j
 public class RegionService {
@@ -45,7 +46,13 @@ public class RegionService {
   }
 
   public List<Region> getNeighbors(List<Region> forValidateRegions) {
-    List<Region> neighbors = regionRepository.getNeighbors(forValidateRegions);
+    List<Integer> neighborIds = forValidateRegions.stream()
+        .map(Region::neighborIds)
+        .map(ArrayUtils::toIntArray)
+        .flatMap(Arrays::stream)
+        .distinct()
+        .toList();
+    List<Region> neighbors = regionRepository.getRegionsIn(neighborIds);
     log.info(neighbors.toString());
 //    neighbors.stream()
 //        .map(Region::neighborIds)

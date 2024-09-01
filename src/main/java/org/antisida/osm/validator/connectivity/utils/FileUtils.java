@@ -28,10 +28,12 @@ public class FileUtils {
   @SneakyThrows
   public static boolean isExistO5mFile(Region region) {
     try (Stream<Path> stream = Files.walk(getWorkPath())) {
-      boolean isExistFile = stream.filter(Files::isRegularFile)
-          .anyMatch(f -> f.toString().equals(region.path()));
+      boolean isExistFile = stream
+          .filter(Files::isRegularFile)
+//          .peek(path -> log.info(path.toString()))
+          .anyMatch(path -> path.toString().endsWith(region.path()));
       if (!isExistFile)
-        log.info("File {} not found. Validation near the border of this region will be incomplete.",
+        log.info("Neighbor's file {} not found. Validation near the border of this region will be incomplete.",
                  getWorkPath() + "\\" + region.path());
       return isExistFile;
     }
@@ -54,7 +56,7 @@ public class FileUtils {
   public static Path getWorkPath() {
     URL url = Main.class.getProtectionDomain().getCodeSource().getLocation();
     Path parent = Paths.get(url.toURI()).getParent();
-    log.info("Work dir: {}", parent); //fixme del
+//    log.info("Work dir: {}", parent); //fixme del
     return parent;
   }
 
