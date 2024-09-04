@@ -1,16 +1,25 @@
 package org.antisida.osm.validator.connectivity.validator;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.swing.text.Document;
 import lombok.extern.slf4j.Slf4j;
+import org.alex73.osmemory.MemoryStorage;
+import org.alex73.osmemory.OsmWay;
 import org.antisida.osm.validator.Validator;
 import org.antisida.osm.validator.connectivity.model.MarkedNode;
 import org.antisida.osm.validator.connectivity.model.Region;
+import org.antisida.osm.validator.connectivity.model.RoutingWay;
+import org.antisida.osm.validator.connectivity.model.RoutingWays;
 import org.antisida.osm.validator.connectivity.model.ValidationResult;
 import org.antisida.osm.validator.connectivity.repository.Repository;
 import org.antisida.osm.validator.connectivity.service.ConnectivityResultService;
@@ -51,12 +60,51 @@ public class ConnectivityValidator implements Validator {
         .filter(FileUtils::isExistO5mFile)
         .toList();
 
+    Map<Region, List<RoutingWay>> waysByRegion = new HashMap<>();
+
     Stream.concat(forValidateRegions.stream(), neighborRegions.stream())
+        .filter(resultService::isReadyInnerValidation)
+//        .map(Region::path)
         .distinct()
-        .map(this::innerValidate)
+        .map(region -> {
+          MemoryStorage memoryStorage = fileUtils.readOM5File(region.path());
+          ArrayList<OsmWay> routingWays = om5Utils.getRoutingWays(memoryStorage);
+          List<RoutingWay> list = routingWays.stream()
+              .map(osmWay -> new RoutingWay(region, osmWay))
+              .toList();
+          waysByRegion.put(region, list);
+          return list;
+        })
+        .map(this::computeGraph)
         .flatMap(Optional::stream)
         .forEach(resultService::save);
 
+    Map<Long, List<OsmWay>> allWays = Optional.of(region)
+        .map(Region::path)
+        .map(fileUtils::readOM5File)
+        .map(om5Utils::getRoutingWays)
+        .stream()
+        .collect(Collectors.toMap(OsmWay::getId, osmWay -> osmWay));
+    List<Long> isolatedWayIds = resultService.getIsolatedWayIds(regionId);
+    isolatedWayIds.forEach(allWays.keySet()::remove);
+    for (Region neighborRegion : neighborRegions) {
+      List<Long> notIsolatedWayIds = resultService.getNotIsolatedWayIds(neighborRegion);
+      for (Long notIsolatedWayId : notIsolatedWayIds) {
+        if (allWays.containsKey(notIsolatedWayId)) {
+          UUID componentId =
+          allWays.remove(notIsolatedWayId);
+        }
+      }
+    }
+    List<Long>
+//    forValidateRegions.stream()
+    Optional.of(forValidateRegions.getFirst())
+        .map(waysByRegion::get)
+        .stream()
+        .flatMap(Collection::stream)
+        .filter(routingWay -> conteinsInMainGrepth(rget))
+        .flatMap(Collection::stream)
+        .filter(way -> conteins())
     forValidateRegions.parallelStream()
         .map(this::outerValidate)
         .forEach(resultService::setNotIsolated);
@@ -66,6 +114,22 @@ public class ConnectivityValidator implements Validator {
 //    repository.saveNodes(result.adjacencyList().values());
 ////    outerValidate(filePath, ); fixme
     return null;
+  }
+
+  public Optional<ValidationResult> computeGraph(List<RoutingWay> rw) {
+    List<OsmWay> osmWays = Optional.of(rw).stream()
+        .flatMap(Collection::stream)
+        .map(RoutingWay::way)
+        .toList();
+    return Optional.of(osmWays)
+        .map(connectivityUtils::createAdjacencyList)
+        .map(adjacencyList -> connectivityUtils.markComponents(adjacencyList, rw.getFirst().region().id()))
+        .map(validationResult -> {
+          log.info("Region: {}. Component count: {}",
+                   validationResult.components().getFirst().getRegionId(),
+                   validationResult.components().size());
+          return validationResult;
+        });
   }
 
   public Optional<ValidationResult> innerValidate(Region region) {
